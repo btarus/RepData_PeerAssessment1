@@ -1,15 +1,11 @@
----
-title: "Reproducible Research: Peer Assessment 1"
-output: 
-  html_document:
-    keep_md: true
----
+# Reproducible Research: Peer Assessment 1
 
 
 ## 1. Loading and preprocessing the data
 
 The first step to perform is to load the original dataset into a data frame.
-```{r loadingdata, echo=TRUE}
+
+```r
 dataFile <- "./activity.csv"
 data <- read.csv(file=dataFile, head=TRUE, sep=",")
 dataObs <- dim(data)[1]
@@ -28,27 +24,30 @@ monthOne <- month.name[as.integer(monthOneChar)]
 monthTwo <- month.name[as.integer(monthTwoChar)]
 ```
 
-The dataset has  `r dataObs` observables of `r dataCol` variables, *`r nameCol1`*, *`r nameCol2`*, and *`r nameCol3`*. There are `r dataStepsNA` missing observables (NA) in the first variable, `r nameCol1`. The second and third variables, *`r nameCol2`*, and *`r nameCol3`*, have `r dataDateNA` and `r dataIntervalNA` missing observables, respectively. There are `r nDays` levels in the *`r nameCol2`* variables, which correspond to the same number of days in the two months of `r monthOne` and `r monthTwo`. 
+The dataset has  17568 observables of 3 variables, *steps*, *date*, and *interval*. There are 2304 missing observables (NA) in the first variable, steps. The second and third variables, *date*, and *interval*, have 0 and 0 missing observables, respectively. There are 61 levels in the *date* variables, which correspond to the same number of days in the two months of October and November. 
 
 We want now to determine whether the missing observables correspond to a whole day or there are days with partial measurements. This analysis will be partialy used in the section 4.2. (see below).
 
-We convert the second column, *`r nameCol2`*, to a Date class:
+We convert the second column, *date*, to a Date class:
 
-```{r convertDateClass, echo=TRUE}
+
+```r
 dataDate <- strptime(paste(data$date), "%Y-%m-%d")
 ```
 
-```{r measurementsPerDay, echo=TRUE}
+
+```r
 dailyMeasurements <- (60/5)*24
 dailyNA <- tapply(is.na(data$steps), data$date, FUN=sum)
 daysNAonly <- sum(dailyNA == dailyMeasurements)
 daysNApartial <- nDays - sum((dailyNA == dailyMeasurements) | (dailyNA == 0))
 ```
-There should be `r dailyMeasurements` records every day. However, in some of the days the device was stoped and did not saved any data. There are `r daysNAonly` days with no record and `r daysNApartial` days when the device worked only partialy.
+There should be 288 records every day. However, in some of the days the device was stoped and did not saved any data. There are 8 days with no record and 0 days when the device worked only partialy.
 
 ## 2. Evaluate the mean total number of steps taken per day
 
-```{r stepsPerDay, echo=TRUE}
+
+```r
 options(scipen=1, digits=2)
 library(ggplot2)
 
@@ -60,16 +59,21 @@ ggTotalStepsDaily + geom_histogram(col="red", fill="green", alpha=.2, binwidth=5
     labs(title="Histogram of the total number of steps taken each day", 
          x="Total number of steps taken per day", y="Count") + 
     xlim(c(0,25000)) + ylim(c(0,30))
+```
+
+![](PA1_template_files/figure-html/stepsPerDay-1.png) 
+
+```r
 meanTSD <- mean(totalStepsDailyDF$totalStepsDaily)
 medianTSD <- median(totalStepsDailyDF$totalStepsDaily)
 ```
 
-The **mean** and **median** total number of steps taken per day are `r meanTSD` and `r medianTSD`, respectively.
+The **mean** and **median** total number of steps taken per day are 10766.19 and 10765, respectively.
 
 ## 3. Inspection of the average daily activity pattern
 
-```{r averageDailyActivity, echo=TRUE}
 
+```r
 daysStepRecors <- nDays - daysNAonly
 
 tIntMean <- vector(mode="integer", length=0)
@@ -92,19 +96,24 @@ rm(tIntMean)
 
 ggplot(dailyActivity, aes(interval, stepIntervalMean)) + geom_line() + 
     labs(title="Average daily activity", x="Interval", y="Mean steps per interval")
+```
 
+![](PA1_template_files/figure-html/averageDailyActivity-1.png) 
+
+```r
 intervalMaxSteps <- dailyActivity$interval[which.max(dailyActivity$stepIntervalMean)]
 ```
 
-The 5-minute interval, averaged across all the days in the dataset, that contains the maximum number of steps is `r intervalMaxSteps`, or to be more exactly, between `r intervalMaxSteps` and `r intervalMaxSteps+5`.
+The 5-minute interval, averaged across all the days in the dataset, that contains the maximum number of steps is 835, or to be more exactly, between 835 and 840.
 
 ## 4. Imputing missing values
 
-```{r imputingMissingValues, echo=TRUE}
+
+```r
 dataStepsNA <- sum(is.na(data$steps))
 ```
 ### 4.1. Total number of missing values
-There are `r dataStepsNA` missing values (out of `r dataObs`) in the dataset.
+There are 2304 missing values (out of 17568) in the dataset.
 
 ### 4.2. Analysis of the missing values in the dataset
 
@@ -112,14 +121,16 @@ Because all the days with missing values have no observable saved (see the discu
 
 ### 4.3. Replacing the missing values in the dataset
 
-```{r replacingMissingData, echo=TRUE}
+
+```r
 dataNAreplaced <- data
 dataNAreplaced$steps[is.na(dataNAreplaced$steps)] <- 0
 ```
 
 ### 4.4. Histogram and mean and median of the dataset with NA replaced
 
-```{r dataNAreplacedAnalysis, echo=TRUE}
+
+```r
 totalStepsDailyNAreplaced <- tapply(dataNAreplaced$steps, dataNAreplaced$date, FUN=sum)
 totalStepsDailyNAreplacedDF <- data.frame(totalStepsDailyNAreplaced)
 
@@ -128,20 +139,26 @@ ggplot(data=totalStepsDailyNAreplacedDF, aes(x=totalStepsDailyNAreplaced)) +
     labs(title="Histogram of the total number of steps taken each day (NA replaced)", 
          x="Total number of steps taken per day", y="Count") + xlim(c(0,25000)) + 
     ylim(c(0,30))
+```
+
+![](PA1_template_files/figure-html/dataNAreplacedAnalysis-1.png) 
+
+```r
 meanTSDnaReplaced <- mean(totalStepsDailyNAreplacedDF$totalStepsDailyNAreplaced)
 medianTSDnaReplaced <- median(totalStepsDailyNAreplacedDF$totalStepsDailyNAreplaced)
 ```
-The **mean** of the total number of steps taken per day calculated from the dataset with NA replaced is `r meanTSDnaReplaced`, compared to a value of `r meanTSD`, calculated from the dataset with NA removed.
+The **mean** of the total number of steps taken per day calculated from the dataset with NA replaced is 9354.23, compared to a value of 10766.19, calculated from the dataset with NA removed.
 
-The **median** of the total number of steps taken per day calculated from the dataset with NA replaced is `r medianTSDnaReplaced`, compared to a value of `r medianTSD`, calculated from the dataset with NA removed.
+The **median** of the total number of steps taken per day calculated from the dataset with NA replaced is 10395, compared to a value of 10765, calculated from the dataset with NA removed.
 
-It can be observed that the values of the **mean** is lower when calculated from the dataset with the NA replaced compared to the dataset with the NA removed, and this is because we will have to divide by a larger number of days (`r nDays`) in the former case compared to the latter database (`r daysStepRecors`).
+It can be observed that the values of the **mean** is lower when calculated from the dataset with the NA replaced compared to the dataset with the NA removed, and this is because we will have to divide by a larger number of days (61) in the former case compared to the latter database (53).
 
 The **median** is lower when calculated from the dataset with the NA replaced compared to the dataset with the NA removed.
 
 ## 5. Differences in activity patterns between weekdays and weekends
 
-```{r differenceDays, echo=TRUE}
+
+```r
 dataNAreplaced$date <- strptime(paste(dataNAreplaced$date), "%Y-%m-%d")
 dataNAreplaced$weekDay <- weekdays(dataNAreplaced$date)
 
@@ -200,6 +217,8 @@ ggplot(weeklyActivity, aes(interval, stepIntervalMean)) + geom_line() +
     labs(title="Weekly activity", x="Interval", y="Number of steps") + 
     facet_grid(dayKind ~ .)
 ```
+
+![](PA1_template_files/figure-html/differenceDays-1.png) 
 
 
 
